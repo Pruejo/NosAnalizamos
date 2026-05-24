@@ -1,6 +1,8 @@
 ---
 title: "NosAnalizamos"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 date: "2026-05-04"
 ---
 
@@ -16,16 +18,56 @@ pacman::p_load(
   knitr,
   float,
   kableExtra,
+  GGally
 )
 
 ```
 
 ```{r}
 library(readr)
-library()
-datos = read_table("data/NosAutoanalizamos2022 - Hoja1.tsv", 
-    skip = 25)
+datos = read_delim("data/NosAutoanalizamos2022 - Hoja1.tsv", 
+    delim = "\t", escape_double = FALSE, 
+    trim_ws = TRUE, skip = 25)
+datos = datos[,2:21]
+class(datos$Id[3])
+datos$Id = as.character(datos$Id)
 datos = datos[2:63,]
+datos = datos %>%  mutate(across( everything(),~ ifelse(. == "NC",3,.))) 
+save(datos , file = "Notas.Rdata")
+datos$ALG = as.numeric(datos$ALG)
+datos$ANM = as.numeric(datos$ANM)
+datos$FP = as.numeric(datos$FP)
+datos$DCS = as.numeric(datos$DCS)
+datos$MD = as.numeric(datos$MD)
+class(datos$FP)
+summary(datos$ALG)
+x = data_frame(summary(datos$ALG),summary(datos$ANM),summary(datos$FP),summary(datos$DCS),summary(datos$MD))
+x = x[1:6,]
+x = as.data.frame(t(x))
+row.names(x) = c("ALG","ANM","FP","DCS","MD")
+colnames(x) = c("Min","P25","Mediana","Media","P75","Max")
+x$Min = round(x$Min,digits = 2)
+x$P25 = round(x$P25,digits = 2)
+x$Mediana = round(x$Mediana,digits = 2)
+x$Media = round(x$Media,digits = 2)
+x$P75 = round(x$P75,digits = 2)
+x$Max = round(x$Max,digits = 2)
 
+datos[,13:17] %>% na.omit() %>% ggpairs()  
+
+datos[,13:17] %>% na.omit() %>% cov() %>% cor(method = "spearman")
+datos[,13:17] %>% na.omit() %>% cor(method = "pearson")
+notas = datos[,13:17] %>% na.omit() %>% pivot_longer(cols = everything(),names_to = "Asignaturas",values_to = "Notas")
+notas %>% ggplot(aes(x = Asignaturas,y = Notas,fill = Asignaturas)) + geom_boxplot()
+
+notas_sex = data.frame(datos$Sex,datos[[13]],datos[[14]],datos[[15]],datos[[16]],datos[[17]])
+notas_sex = notas_sex %>% na.omit() %>% pivot_longer(cols = (-datos.Sex),names_to = "Asignaturas",values_to = "Notas")
+
+notas_sex %>% ggplot(aes(x = Asignaturas,y = Notas,fill = datos.Sex)) + geom_boxplot()
+
+
+notas_alumno = data.frame(datos$Id,datos[[13]],datos[[14]],datos[[15]],datos[[16]],datos[[17]])
+notas_alumno = notas_alumno %>% na.omit() %>% pivot_longer(cols = (-datos.Id),names_to = "Asignaturas",values_to = "Notas")
+notas_alumno %>% ggplot(aes(x = datos.Id,y = Notas,colour = Asignaturas)) + geom_point() + geom_line() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 ```
